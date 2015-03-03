@@ -1,0 +1,28 @@
+@import "settings";
+ 
+body {
+    color: slategray;
+    background: aquamarine;
+    font-family: sans-serif;
+    font-size: 100%;
+ }
+div { 
+    position: unquote($position);
+    border-radius: 0px; 
+    transition: all 0.4s ease;
+    &.rounded {
+        border-radius: 5px;
+    }
+}
+h1 {
+    font-size: 2.4rem;
+    color: lightcoral;
+}
+p {
+    color: darkcyan;
+    &.intro {
+        font-size: 1.2rem;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+}
