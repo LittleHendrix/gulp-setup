@@ -112,7 +112,7 @@ gulp.task('css', function() {
 		.pipe(plugins.sass({
 			outputStyle: sassStyle,
 			sourceComments: sourceMap,
-			inlcudePaths: [
+			includePaths: [
 				basePaths.bower + 'foundation/scss/'
 			]
 		}))
