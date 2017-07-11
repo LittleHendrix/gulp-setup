@@ -27,6 +27,22 @@ $anim-fill-mode: none // none(default)|forwards|backwards|both
     }
 }
 
+
+@mixin linear-gradient($fromColor, $toColor, $dest: bottom, $angle: null) {
+    background-color: $toColor; /* Fallback Color */
+    @if ($angle) {
+        background-image: linear-gradient($angle, $fromColor, $toColor);
+    }
+    @else {
+        background-image: linear-gradient(to $dest, $fromColor, $toColor);
+    }
+    /* "Invalid", but works in 6-8 */
+    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr='#{$fromColor}', endColorstr='#{$toColor}');
+    /* Valid, works in 8-9 */
+    -ms-filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#{$fromColor}', EndColorStr='#{$toColor}');
+}
+
+
 @mixin ghost-center {
     &:before {
         content: "";
@@ -51,20 +67,203 @@ $anim-fill-mode: none // none(default)|forwards|backwards|both
     white-space: nowrap;
     outline: none;
     padding: 0;
-    margin: 0; 
+    margin: 0;
     border: 0;
 }
 
-@mixin linear-gradient($fromColor, $toColor, $dest: bottom, $angle: null) {
-    background-color: $toColor; /* Fallback Color */
-    @if ($angle) {
-        background-image: linear-gradient($angle, $fromColor, $toColor);
-    } @else {
-        background-image: linear-gradient(to $dest, $fromColor, $toColor);
+// Specify hi-res background for retina displays
+@mixin image-2x($image, $width, $height) {
+    @media (min--moz-device-pixel-ratio: 1.3), (-o-min-device-pixel-ratio: 2.6/2), (-webkit-min-device-pixel-ratio: 1.3), (min-device-pixel-ratio: 1.3), (min-resolution: 1.3dppx) {
+        // on retina, use image that's scaled by 2
+        background-image: url($image);
+        background-size: $width $height;
     }
-    /* "Invalid", but works in 6-8 */
-    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr='#{$fromColor}', endColorstr='#{$toColor}');
+}
 
-    /* Valid, works in 8-9 */
-    -ms-filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#{$fromColor}', EndColorStr='#{$toColor}');
+// Calculate fluid ratio based on two dimensions (width/height)
+@mixin fluid-ratio($large-size, $small-size) {
+    $width-large: nth($large-size, 1);
+    $width-small: nth($small-size, 1);
+    $height-large: nth($large-size, 2);
+    $height-small: nth($small-size, 2);
+    $slope: ($height-large - $height-small) / ($width-large - $width-small);
+    $height: $height-small - $width-small * $slope;
+
+    padding-top: $slope * 100%;
+    height: $height;
+    background-size: cover;
+    background-position: center; // Internet Explorer 7/8
+}
+
+// @mixins
+//
+// We use this to create isosceles triangles
+// $triangle-size - Used to set border-size. No default, set a px or em size.
+// $triangle-color - Used to set border-color which makes up triangle. No default
+// $triangle-direction - Used to determine which direction triangle points. Options: top, bottom, left, right
+@mixin css-triangle($triangle-size, $triangle-color, $triangle-direction) {
+    border: inset $triangle-size;
+    content: "";
+    display: block;
+    height: 0;
+    width: 0;
+
+    @if ($triangle-direction == top) {
+        border-color: $triangle-color transparent transparent transparent;
+        border-top-style: solid;
+    }
+
+    @if ($triangle-direction == bottom) {
+        border-color: transparent transparent $triangle-color transparent;
+        border-bottom-style: solid;
+    }
+
+    @if ($triangle-direction == left) {
+        border-color: transparent transparent transparent $triangle-color;
+        border-left-style: solid;
+    }
+
+    @if ($triangle-direction == right) {
+        border-color: transparent $triangle-color transparent transparent;
+        border-right-style: solid;
+    }
+}
+
+// @mixins
+//
+// We use this to add transitions to elements
+// $property - Default: all, Options: http://www.w3.org/TR/css3-transitions/#animatable-properties
+// $speed - Default: 300ms
+// $ease - Default: ease-out, Options: http://css-tricks.com/almanac/properties/t/transition-timing-function/
+@mixin single-transition($property: all, $speed: 300ms, $ease: ease-out) {
+    @include transition($property, $speed, $ease);
+}
+
+// @mixins
+//
+// We use this to add single or multiple transitions to elements
+// $property - Default: all, Options: http://www.w3.org/TR/css3-transitions/#animatable-properties
+// $speed - Default: 300ms
+// $ease - Default: ease-out, Options: http://css-tricks.com/almanac/properties/t/transition-timing-function/
+// $delay - Default: null (0s)
+@mixin transition($property: all, $speed: 300ms, $ease: ease-out, $delay: null) {
+    $transition: none;
+
+    @if length($property) > 1 {
+
+        @each $transition_list in $property {
+
+            @for $i from 1 through length($transition_list) {
+
+                @if $i == 1 {
+                    $_property: nth($transition_list, $i);
+                }
+
+                @if length($transition_list) > 1 {
+                    @if $i == 2 {
+                        $_speed: nth($transition_list, $i);
+                    }
+                }
+                @else {
+                    $_speed: $speed;
+                }
+
+                @if length($transition_list) > 2 {
+                    @if $i == 3 {
+                        $_ease: nth($transition_list, $i);
+                    }
+                }
+                @else {
+                    $_ease: $ease;
+                }
+
+                @if length($transition_list) > 3 {
+                    @if $i == 4 {
+                        $_delay: nth($transition_list, $i);
+                    }
+                }
+                @else {
+                    $_delay: $delay;
+                }
+            }
+
+            @if $transition == none {
+                $transition: $_property $_speed $_ease $_delay;
+            }
+            @else {
+                $transition: $transition, $_property $_speed $_ease $_delay;
+            }
+        }
+    }
+    @else {
+
+        @each $prop in $property {
+
+            @if $transition == none {
+                $transition: $prop $speed $ease $delay;
+            }
+            @else {
+                $transition: $transition, $prop $speed $ease $delay;
+            }
+        }
+    }
+
+    transition: $transition;
+}
+
+// @mixins
+//
+// We use this to translate elements in 2D
+// $horizontal: Default: 0
+// $vertical: Default: 0
+@mixin translate2d($horizontal: 0, $vertical: 0) {
+    transform: translate($horizontal, $vertical)
+}
+
+// @mixins
+//
+// Makes an element visually hidden, but accessible.
+// @see http://snook.ca/archives/html_and_css/hiding-content-for-accessibility
+@mixin element-invisible {
+    clip: rect(1px, 1px, 1px, 1px);
+    height: 1px;
+    overflow: hidden;
+    position: absolute !important;
+    width: 1px;
+}
+
+// @mixins
+//
+// Turns off the element-invisible effect.
+@mixin element-invisible-off {
+    position: static !important;
+    height: auto;
+    width: auto;
+    overflow: visible;
+    clip: auto;
+}
+
+@mixin myClearfix {
+    *zoom: 1;
+
+    &:before, &:after {
+        content: "";
+        display: table;
+    }
+
+    &:after {
+        height: 0;
+        clear: both;
+        overflow: hidden;
+        visibility: hidden;
+    }
+}
+
+@mixin my-text-shadow($x: 0, $y: 0, $r: 2px, $color: #000000, $opacity: 1, $none: null) {
+    @if ($none) {
+        text-shadow: none;
+    }
+    @else {
+        text-shadow: $x $y $r rgba($color, $opacity);
+    }
 }
